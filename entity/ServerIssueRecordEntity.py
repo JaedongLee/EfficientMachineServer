@@ -2,8 +2,8 @@ from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import declarative_base
 
 
-class ServiceIssueRecordEntity(declarative_base()):
-    __tablename__ = "ServiceIssueRecord"
+class ServerIssueRecordEntity(declarative_base()):
+    __tablename__ = "ServerIssueRecord"
 
     Id = Column(Integer, primary_key=True)
     Type = Column(String)

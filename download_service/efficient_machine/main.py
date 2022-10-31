@@ -108,7 +108,7 @@ def download_tool(download_info, tool_aggregation):
 
 
 def record_issue(issue_message_json, tool_id, tool_name, issue_type, stage):
-    program_issue_record = meta.tables['ServiceIssueRecord']
+    program_issue_record = meta.tables['ServerIssueRecord']
     issue_message = json.dumps(issue_message_json)
     insert_issue_record_stmt = insert(program_issue_record) \
         .values(ToolId=tool_id, ToolName=tool_name, Type=issue_type, Stage=stage, IssueMessage=issue_message)

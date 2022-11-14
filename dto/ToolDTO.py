@@ -16,4 +16,5 @@ class ToolDTO:
         self.created_date = entity.CreatedDate
         self.last_updated_date = entity.LastUpdatedDate
         self.version = entity.Version
+        self.file_extension_name = entity.FileExtensionName
 

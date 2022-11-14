@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import traceback
 from datetime import datetime
 from threading import Thread
@@ -9,8 +10,9 @@ from sqlalchemy import insert
 
 from application.tool_service import list_usable_tool_aggregation
 from database_init import meta, engine
-from definitions import ROOT_DIR
 from download_service.efficient_machine.util.download import download_info_builder
+from enumation.FileExtensionNameEnum import FileExtensionNameEnum
+from enumation.ReleaseTypeEnum import ReleaseTypeEnum
 from enumation.ToolSourceTypeEnum import ToolSourceTypeEnum
 
 
@@ -73,30 +75,33 @@ def download_tool(download_info, tool_aggregation):
 
     # 下载工具
     download_url = download_info.url
-    tool_file_name = download_info.file_name
+    file_name = download_info.file_name
+    file_extension_name = download_info.file_extension_name
     version = download_info.version
     tool = tool_aggregation.tool
     tool_name = tool.name
     tool_id = tool.id
-    directory = f'{ROOT_DIR}/download_service/resource/tool_program/{tool_name}'.format(ROOT_DIR=ROOT_DIR,
-                                                                                        tool_name=tool_name)
-    if not os.path.exists(directory):
-        os.mkdir(directory)
-    tool_file_path = f'{ROOT_DIR}/download_service/resource/tool_program/{tool_name}/{tool_file_name}' \
-        .format(ROOT_DIR=ROOT_DIR, tool_name=tool_name, tool_file_name=tool_name)
-    if os.path.exists(tool_file_path):
-        print(f"文件已存在. {tool_file_name}".format(tool_file_name=tool_file_name))
+    directory_path = download_info.directory_path
+    if not os.path.exists(directory_path):
+        os.mkdir(directory_path)
+    file_path = download_info.file_path
+    if os.path.exists(file_path):
+        print(f"文件已存在. {file_name}.{file_extension_name}"
+              .format(file_name=file_name, file_extension_name=file_extension_name))
         return
     try:
         response = requests.get(download_url, verify=False)
         if response.status_code == 200:
-            with open(tool_file_path, 'wb') as f:
+            with open(file_path, 'wb') as f:
                 f.write(response.content)
             update_stmt = tool_table.update().where(tool_table.c.Id == tool_id) \
-                .values(FileName=tool_file_name, Version=version,
-                        LastUpdatedDate=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+                .values(FileName=file_name, Version=version,
+                        LastUpdatedDate=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                        FileExtensionName=file_extension_name)
             engine.execute(update_stmt)
-            print(f"下载完成. {tool_file_name}".format(tool_file_name=tool_file_name))
+            print(f'下载完成. {file_name}.{file_extension_name}'
+                  .format(file_name=file_name, file_extension_name=file_extension_name))
+            download_tool_postprocess(tool_aggregation, download_info)
         else:
             issue_message_json = {'download_url': download_url, 'status_code': response.status_code,
                                   'response_message': response.text}
@@ -105,6 +110,39 @@ def download_tool(download_info, tool_aggregation):
         print(traceback.format_exc())
         issue_message_json = {'exception_url': download_url, 'exception_stack': traceback.format_exc()}
         record_issue(issue_message_json, tool.id, tool.name, 'DOWNLOAD_LATEST_TOOLS', 'GET_TOOL_ASSET')
+
+
+def download_tool_postprocess(tool_aggregation, download_info):
+    tool = tool_aggregation.tool
+    if is_tool_portable_and_zip(tool):
+        unpack_zip(tool_aggregation, download_info)
+        return
+    if is_tool_installer(tool):
+        tool_table = meta.tables['Tool']
+
+
+def is_tool_portable_and_zip(tool):
+    return ReleaseTypeEnum.PORTABLE.value == tool.release_type and \
+           FileExtensionNameEnum.ZIP.value == tool.file_extension_name
+
+
+def is_tool_installer(tool):
+    return ReleaseTypeEnum.INSTALLER.value == tool.release_type
+
+
+def unpack_zip(tool_aggregation, download_info):
+    tool_name = tool_aggregation.tool.name
+    file_name = download_info.file_name
+    file_extension_name = download_info.file_extension_name
+    directory_path = download_info.directory_path
+    unpacked_directory_path = f'{directory_path}/{file_name}'
+    file_path = download_info.file_path
+    if os.path.exists(unpacked_directory_path):
+        shutil.rmtree(unpacked_directory_path)
+    shutil.unpack_archive(file_path, unpacked_directory_path)
+    os.remove(file_path)
+    print(f'{file_name}.{file_extension_name} 已解压'
+          .format(file_name=file_name, file_extension_name=file_extension_name))
 
 
 def record_issue(issue_message_json, tool_id, tool_name, issue_type, stage):

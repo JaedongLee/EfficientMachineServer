@@ -16,4 +16,5 @@ class ToolEntity(declarative_base()):
     CreatedDate = Column(String)
     LastUpdatedDate = Column(String)
     Version = Column(String)
+    FileExtensionName = Column(String)
 

@@ -1,31 +1,36 @@
 import json
 import os.path
+import shutil
 import traceback
 from datetime import datetime
+from pathlib import Path
 from unittest import TestCase
 
 import requests
 import scrapy
 from sqlalchemy import MetaData, create_engine
 
+from definitions import ROOT_DIR, CLIENT_ROOT_DIR
 from download_service.efficient_machine import main
-from download_service.efficient_machine.util.download.DownloadInfo import DownloadInfo
-from dto.ToolAggregationDTO import ToolAggregationDTO
-from entity.ToolEntity import ToolEntity
+from download_service.efficient_machine.main import download_latest_not_custom_tool, download_tool_postprocess
+from download_service.efficient_machine.test.data_creator import create_ditto_tool_aggregation, \
+    create_ditto_download_info
 
 
 class Test(TestCase):
-    def test_download_tool_from(self):
-        tool_entity = ToolEntity()
-        tool_entity.Id = 1
-        tool_entity.Name = 'Ditto'
-        tool_aggregation_dto = ToolAggregationDTO(tool_entity, None, None)
-        download_info = DownloadInfo(
-            'https://github.com/sabrogden/Ditto/releases/download/3.24.214.0/DittoPortable_3_24_214_0.zip',
-            'DittoPortable_64bit_3_24_214_0.zip', '3.24.214.0')
-        main.download_tool(download_info, tool_aggregation_dto)
+    def test_download_latest_not_custom_tool(self):
+        ditto_tool_aggregation = create_ditto_tool_aggregation()
+        download_latest_not_custom_tool(ditto_tool_aggregation)
 
-    def test_download_latest_release(self):
+    def test_batch_download_latest_release_asset(self):
+        # 删除 tool_program 下的文件
+        path = f'{CLIENT_ROOT_DIR}/EfficientMachine/Resources/Tools/Program/'
+        shutil.rmtree(path)
+        os.mkdir(path)
+
+        main.batch_download_latest_release_asset()
+
+    def test_batch_download__not_existed_latest_release_asset(self):
         main.batch_download_latest_release_asset()
 
     def test_sqlalchemy(self):
@@ -59,3 +64,15 @@ class Test(TestCase):
     def test_a(self):
         x = datetime.now()
         print(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+
+    def test_unzip(self):
+        shutil.unpack_archive(
+            "D:/OneDrive/Project/Self/EfficientMachine/Service/download_service/resource/tool_program/Office Tool Plus/Office_Tool_with_runtime_v9.0.3.7.zip")
+
+    def test_download_tool_postprocess(self):
+        ditto_tool_aggregation = create_ditto_tool_aggregation()
+        ditto_download_info = create_ditto_download_info()
+        download_tool_postprocess(ditto_tool_aggregation, ditto_download_info)
+
+    def test_dir(self):
+        print(CLIENT_ROOT_DIR)

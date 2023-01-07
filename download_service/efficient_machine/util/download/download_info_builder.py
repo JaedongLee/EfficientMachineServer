@@ -41,9 +41,9 @@ def build_path(tool_aggregation, download_info):
     tool_name = tool.name
     file_name = download_info.file_name
     file_extension_name = download_info.file_extension_name
-    directory_path = '{client_root_dir}/EfficientMachine/Resources/Tools/Program/{tool_name}' \
+    directory_path = '{client_root_dir}/EfficientMachine/EfficientMachine/Resources/Tools/Program/{tool_name}' \
         .format(client_root_dir=CLIENT_ROOT_DIR, tool_name=tool_name)
-    file_path = '{client_root_dir}/EfficientMachine/Resources/Tools/Program/{tool_name}/{file_name}.{file_extension_name}'.format(
+    file_path = '{client_root_dir}/EfficientMachine/EfficientMachine/Resources/Tools/Program/{tool_name}/{file_name}.{file_extension_name}'.format(
         client_root_dir=CLIENT_ROOT_DIR, tool_name=tool_name, file_name=file_name,
         file_extension_name=file_extension_name)
     download_info.directory_path = directory_path

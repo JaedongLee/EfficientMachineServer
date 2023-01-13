@@ -1,3 +1,4 @@
+import itertools
 import json
 import os.path
 import shutil
@@ -8,9 +9,10 @@ from unittest import TestCase
 
 import requests
 import scrapy
+from snowflake import SnowflakeGenerator
 from sqlalchemy import MetaData, create_engine
 
-from definitions import ROOT_DIR, CLIENT_ROOT_DIR
+from definitions import ROOT_DIR, CLIENT_ROOT_DIR, TOOLS_DOWNLOAD_DIRECTORY
 from download_service.efficient_machine import main
 from download_service.efficient_machine.main import download_latest_not_custom_tool, download_tool_postprocess
 from download_service.efficient_machine.test.data_creator import create_ditto_tool_aggregation, \
@@ -46,11 +48,6 @@ class Test(TestCase):
         json_object = {'a': 'a_value', 'b': 'b_value'}
         json_string = json.dumps(json_object)
 
-    def test_temp(self):
-        path = '8006/228001/Material_Theme_UI-7.11.0.zip'
-        file_name = os.path.basename(path)
-        print(file_name)
-
     def test_scrapy(self):
         response = scrapy.Request(url='https://processhacker.sourceforge.io/downloads.php', callback=self.parse)
 
@@ -76,3 +73,7 @@ class Test(TestCase):
 
     def test_dir(self):
         print(CLIENT_ROOT_DIR)
+
+    def test_temp(self):
+        now = datetime.now()
+        print(now)
